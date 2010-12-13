@@ -1,12 +1,12 @@
 === Embedded Video ===
 Ported By: Dave Searle
-Contributors: jovelstefan
+Contributors: dsearle
 Tags: embedding, video, embed, portal, ooyala
 Requires at least: 2.5
 Tested up to: 2.6
 Stable tag: 1.1
 
-Easy embedding of videos for the Ooyala Video Platform.
+Easy embedding of videos for the Ooyala Video Platform. Ported from jovelstefan's excellent embedded video plugin.
 
 == Installation ==
 
