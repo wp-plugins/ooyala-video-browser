@@ -1,4 +1,4 @@
-=== Embedded Video ===
+=== Ooyala Video ===
 Ported By: Dave Searle
 Contributors: dsearle
 Tags: embedding, video, embed, portal, ooyala
