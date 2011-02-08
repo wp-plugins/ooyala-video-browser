@@ -1,6 +1,7 @@
 <?php
 //if (!defined('ABSPATH')) define('ABSPATH', dirname(__FILE__).'/../../../');
 //require_once('../../../wp-admin/admin.php');
+include_once('./config.php');
 
 if (!defined('ABSPATH')) include_once('./../../../wp-blog-header.php');
 require_once(ABSPATH . '/wp-admin/admin.php');
@@ -177,7 +178,7 @@ else
     <ul>
       <li id="portal_tab" class="current"><span><a href="javascript:mcTabs.displayTab('portal_tab','portal_panel');" onmousedown="return false;"><?php echo _e('Ooyala video','ooyalavideo'); ?></a></span></li>
       <?php if ($attachments) { ?><li id="select_tab"><span><a href="javascript:mcTabs.displayTab('select_tab','select_panel');" onmousedown="return false;"><?php echo _e('Local video','ooyalavideo'); ?></a></span></li><?php } ?>
-      <li id="upload_tab"><span><!--<a href="javascript:mcTabs.displayTab('upload_tab','upload_panel');" onmousedown="return false;">--><?php echo _e('Upload (Coming Soon)','ooyalavideo'); ?></a></span></li>
+      <li id="upload_tab"><span><a href="javascript:mcTabs.displayTab('upload_tab','upload_panel');" onmousedown="return false;"><?php echo _e('Upload to Ooyala','ooyalavideo'); ?></a></span></li>
       <!--<li id="remote_tab"><span><a href="javascript:mcTabs.displayTab('remote_tab','remote_panel');" onmousedown="return false;"><?php echo _e('Video URL','ooyalavideo'); ?></a></span></li>-->
     </ul>
   </div>
@@ -213,6 +214,181 @@ else
         </table>
       <input type="hidden" name="tab" value="portal" />
     </form>
+  </div>
+  
+   <div id="upload_panel" class="panel">
+    
+<?php
+class OoyalaPartnerAPI 
+{ 
+  static function signed_params($params) 
+  { 
+    if (!array_key_exists('expires', $params)) { 
+      $params['expires'] = time() + 900;  // 15 minutes 
+    } 
+ 
+    $string_to_sign = OOYALA_SECRET_CODE; 
+    $param_string = 'pcode='.OOYALA_PARTNER_CODE; 
+    $keys = array_keys($params); 
+    sort($keys); 
+ 
+    foreach ($keys as $key) { 
+      $string_to_sign .= $key.'='.$params[$key]; 
+      $param_string .= '&'.rawurlencode($key).'='.rawurlencode($params[$key]); 
+    } 
+      
+    $digest = hash('sha256', $string_to_sign, true); 
+    $signature = ereg_replace('=+$', '', trim(base64_encode($digest))); 
+    return $param_string.'&signature='.rawurlencode($signature); 
+  } 
+} 
+ 
+// Define any default labels to assign and the dynamic label prefix  
+// for any user-selected dynamic labels 
+  
+$param_string = OoyalaPartnerAPI::signed_params(array( 
+  'status' => 'pending',  
+  'dynamic[0]' => '^/',
+  'dynamic[1]' => '^/',
+  'dynamic[2]' => '^/area/',
+  'dynamic[3]' => '^/area/', 
+  ));
+?> 
+  <script type="text/javascript"> 
+      function onFileSelected(file) 
+      { 
+        document.getElementById('file_name').value = file.name; 
+      } 
+      function onProgress(event) 
+      { 
+        document.getElementById('status').innerHTML = (parseInt(event.ratio * 10000) / 100) + '%';  
+      } 
+      function onUploadComplete() 
+      { 
+        document.getElementById('status').innerHTML = 'Done!'; 
+      } 
+      function onUploadError(text) 
+      { 
+        document.getElementById('status').innerHTML = 'Upload Error: ' + text; 
+      } 
+      function onEmbedCodeReady(embedCode) 
+      { 
+        // Not used 
+        // document.getElementById('embedCode').innerHTML = embedCode; 
+      } 
+ 
+      function onOoyalaUploaderReady()  
+      { 
+        try 
+        { 
+          ooyalaUploader.setParameters('<?php print $param_string ?>'); 
+        } 
+        catch(e) 
+        { 
+          alert(e); 
+        } 
+        ooyalaUploader.addEventListener('fileSelected', 'onFileSelected');  
+        ooyalaUploader.addEventListener('progress', 'onProgress');  
+        ooyalaUploader.addEventListener('complete', 'onUploadComplete');  
+        ooyalaUploader.addEventListener('error', 'onUploadError');  
+        ooyalaUploader.addEventListener('embedCodeReady', 'onEmbedCodeReady');  
+          
+        document.getElementById('uploadButton').disabled = false;  
+      } 
+  
+      function startUpload() 
+      { 
+        try 
+        { 
+          ooyalaUploader.setTitle(document.getElementById('file_name').value); 
+          ooyalaUploader.setDescription(document.getElementById('description').value); 
+
+          if (document.getElementById('dynamic_label').value) 
+          { 
+            ooyalaUploader.addDynamicLabel('/' + document.getElementById('dynamic_label').value);
+            ooyalaUploader.addDynamicLabel('/' + document.getElementById('dynamic_label2').value);
+            ooyalaUploader.addDynamicLabel('/area/' + document.getElementById('dynamic_label3').value);
+            ooyalaUploader.addDynamicLabel('/area/' + document.getElementById('dynamic_label4').value);
+             
+          } 
+          var errorText = ooyalaUploader.validate();  
+
+          if (errorText)  
+          {  
+            alert(errorText);  
+            return false;  
+          }  
+          ooyalaUploader.upload(); 
+        }  
+        catch(e)  
+        {  
+          alert(e); 
+        } 
+        return false; 
+      } 
+    </script> 
+
+<style type="text/css" media="screen">
+	
+	
+	 
+	label {
+		font-size: 14px;
+		font-weight: bold;	
+		display: gray;
+		margin-bottom: 1px;
+		clear: both;
+		width: 10em;
+		float: left;
+		text-align: right;
+		margin-right: 0.5em;
+		}
+	
+	fieldset {		
+		width: 750px;
+		background: white;
+		border: 5px solid #999;
+		}
+	
+	</style>
+ <fieldset width="700px">
+   <center><img src="img/ooyala_72dpi_dark_sm.png" /></center>
+	<p>
+
+  
+<label>Filename</label><p><script src="http://www.ooyala.com/partner/uploadButton?width=100&height=20&label=Browse%20Button"></script> <p>
+     <label></label><textarea id="file_name" cols="40"></textarea> <p>
+    
+<label>Description</label>
+        <textarea id="description" rows="5" cols="40"></textarea><p>
+<label>Syndicate</label>
+          <select id="dynamic_label2" name="dynamic_label2" /> 
+            <option value="">None</option>
+            <option value="YouTube">YouTube</option>
+            <option value="Boxee">Boxee</option>
+            <option value="Roku">Roku</option>
+          </select> <p>
+          
+<label>Category</label>
+<select id="dynamic_label" name="dynamic_label" /> 
+  <option value="">None</option>
+  <option value="News">News</option>
+  <option value="Sport">Sport</option>
+  <option value="Business">Business</option>
+  <option value="Culture">Culture</option>
+</select> <p>
+
+
+<label> </label> <input type="checkbox" id="dynamic_label4" name="dynamic_label4" value="Public" />Public<br />
+<label> </label> <input type="checkbox" id="dynamic_label3" name="dynamic_label3" value="Private" />Private<p>
+
+
+
+
+<label> </label>  <button id="uploadButton" onClick="return startUpload();">Upload!</button>  <a id="status"></a>
+    
+    
+    </fieldset>
   </div>
 </div>
 </body>
