@@ -20,7 +20,7 @@ class OoyalaBacklotAPI  {
 	    } 
 
 	    $digest = hash('sha256', $string_to_sign, true); 
-	    $signature = ereg_replace( '=+$', '', trim( base64_encode( $digest ) ) ); 
+	    $signature = preg_replace( '#=+$#', '', trim( base64_encode( $digest ) ) ); 
 	    return $param_string.'&signature='.rawurlencode( $signature ); 
   	}
 
@@ -57,10 +57,11 @@ class OoyalaBacklotAPI  {
 		}
 
 		$digest = hash( 'sha256', $string_to_sign, true );
-		$signature = ereg_replace( '=+$', '', trim( base64_encode( $digest ) ) );
+		$signature = preg_replace( '#=+$#', '', trim( base64_encode( $digest ) ) );
 		$url .= '&signature='.rawurlencode( $signature );
-					
-		$response = wp_remote_get( $url );
+		$timeout = apply_filters( 'ooyala_http_request_timeout', 10 );
+		
+		$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
 		
 		if ( is_wp_error( $response ) )
 			return $response;
