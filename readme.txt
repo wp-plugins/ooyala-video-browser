@@ -1,10 +1,10 @@
 === Ooyala Video ===
 Ported By: Dave Searle
-Contributors: dsearle, automattic
+Contributors: dsearle, automattic, PeteMall
 Tags: embedding, video, embed, portal, ooyala, shortcode
 Requires at least: 3.0
-Tested up to: 3.2
-Stable tag: 1.4.3
+Tested up to: 3.3
+Stable tag: 1.5
 
 Easy embedding of videos for the Ooyala Video Platform.
 Browse your Ooyala videos, and easily insert them into your posts and page.
@@ -17,7 +17,7 @@ Upload videos to your Ooyala account directly from within WordPress.
 
 == Installation ==
 
-Copy the subfolder "ooyala-video" with all included files into the "wp-content/plugins" folder of WordPress. Activate the plugin and setup your Backlot pcode and secret code in the Ooyala Settings screen. You will find your pcode and secret code under Account -> Developers in Backlot. Please use API V1 pcode and secret code. If you cannot see V1 and V2 API keys listed please contact support@ooyala.com to get access to your V1 API keys.
+Copy the subfolder "ooyala-video" with all included files into the "wp-content/plugins" folder of WordPress. Activate the plugin and setup your Backlot pcode and secret code in the Ooyala Settings screen. You will find your pcode and secret code under Account -> Developers in Backlot.
 
 == Screenshots ==
 
@@ -25,6 +25,11 @@ Copy the subfolder "ooyala-video" with all included files into the "wp-content/p
 2. The Ooyala GUI allows you to search and insert videos from your Ooyala account. You can search by keyword or choose the last 8 videos uploaded to the account.
 
 == Changelog ==
+
+= 1.5 =
+* Added PeteMall as contributor
+* Fixed localization for menu strings
+* Deprecated config.php - API code should be entered through the settings screen.
 
 = 1.4.3 =
 * Added Automattic as contributor
