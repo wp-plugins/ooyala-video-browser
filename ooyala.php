@@ -44,7 +44,7 @@ class Ooyala_Video {
 
 		if ( is_admin() ) {
 			require_once( dirname( __FILE__ ) . '/ooyala-options.php' );
-
+/*
 			$partner_code = get_option( 'ooyalavideo_partnercode' );
 			if ( $partner_code ) {
 				$secret_code  = get_option( 'ooyalavideo_secretcode' );
@@ -68,11 +68,17 @@ class Ooyala_Video {
 				$this->partner_code = $options['partner_code'];
 				$this->secret_code  = $options['secret_code'];
 
-				if ( !empty( $options['api_key'] ) && !empty( $options['api_secret'] ) ) {
+				if ( !empty( $options['api_key'] ) && !empty( $options['api_secret'] ) && ! isset( $options['player_id'] ) ) {
 					$api = new OoyalaApi( $options['api_key'], $options['api_secret'] );
-					$players = $api->get( "players" );
+					$options['player_id'] = '';
 
-					if ( ! empty( $players->items ) ) {
+					try {
+						$players = $api->get( "players" );
+					} catch ( Exception $e ) {
+						$players = false;
+					}
+
+					if ( $players && ! empty( $players->items ) ) {
 						$options['players'] = array();
 						foreach ( $players->items as $player )
 							$options['players'][] = $player->id;
@@ -80,10 +86,14 @@ class Ooyala_Video {
 						if ( empty( $options['player_id'] ) )
 							$options['player_id'] = $options['players'][0];
 
-						update_option( 'ooyala', $options );
 					}
+
+					update_option( 'ooyala', $options );
 				}
+
 			}
+*/
+
 		}
 
 		add_action( 'admin_menu',              array( &$this, 'add_media_page'  ) );
@@ -153,16 +163,17 @@ class Ooyala_Video {
 		*/
 
 		$options = get_option( 'ooyala' );
-		extract(shortcode_atts(array(
+		extract(shortcode_atts( apply_filters( 'ooyala_default_query_args', array(
 			'width' => '',
 			'code' => '',
 			'autoplay' => '',
 			'callback' => 'recieveOoyalaEvent',
 			'wmode' => 'opaque',
 			'player_id' => $options['player_id'],
-			), $atts
+			'platform' => 'html5-priority',
+			'wrapper_class' => 'ooyala-video-wrapper',
+			) ), $atts
 		));
-
 		if ( empty($width) )
 			$width = $options['video_width'];
 		if ( empty($width) )
@@ -175,8 +186,11 @@ class Ooyala_Video {
 		$autoplay = (bool) $autoplay ? '1' : '0';
 		$sanitized_embed = sanitize_key( $code );
 		$wmode = in_array( $wmode, array( 'window', 'transparent', 'opaque', 'gpu', 'direct' ) ) ? $wmode : 'opaque';
+		$wrapper_class = sanitize_key( $wrapper_class );
+		// V2 Callback
 		$callback = preg_match( '/[^\w]/', $callback ) ? '' : sanitize_text_field( $callback ); // // sanitize a bit because we don't want nasty things
-
+		// Check if platform is one of the accepted. If not, set to html5-priority
+		$platform = in_array( $platform, array( 'flash', 'flash-only', 'html5-fallback', 'html5-priority' ) ) ? $platform : 'html5-priority';
 		if ( empty( $code ) )
 			if ( isset( $atts[0] ) )
 				$code = $atts[0];
@@ -197,22 +211,25 @@ class Ooyala_Video {
 				'callback' => $callback,
 				'wmode' => $wmode,
 				'version' => 2,
-			), 'http://player.ooyala.com/player.js' );
+			) , 'http://player.ooyala.com/player.js' );
 
 			if ( !empty( $options['player_id'] ) ) {
-				$output .= '<script src="http://player.ooyala.com/v3/' . esc_attr( $player_id ) .'"></script>
-<div id="playerContainer-' . esc_attr( $sanitized_embed ) . '"></div>
+				$output .= '<script src="http://player.ooyala.com/v3/' . esc_attr( $player_id ) . '?platform=' .$platform . '"></script>
+<div id="playerContainer-' . esc_attr( $sanitized_embed ) . '" class="' . esc_attr( $wrapper_class ) . '"></div>
 <script>
 var myPlayer = OO.Player.create("playerContainer-' . esc_attr( $sanitized_embed ) . '", "' . esc_attr( $code ) .'", {
 	width:' . absint( $width ) . ',
 	height:' . absint( $height ) . ',
 	autoplay: "' . esc_attr( $autoplay ) . '",
-	callback: "' . esc_attr( $callback ) . '",
 	wmode: "' . esc_attr( $wmode ) . '",
+	onCreate: function(player) {
+         window.messageBus = player.mb;  // save reference to message bus
+         window.ooyalaPlayer = player;  // save reference to player itself
+       }
 });
 </script>';
 			} else {
-				$output .= '<div class="ooyala-video-wrapper" id="ooyala-video-' . esc_attr( $sanitized_embed ) . '">';
+				$output .= '<div class="' . esc_attr( $wrapper_class ) . '" id="ooyala-video-' . esc_attr( $sanitized_embed ) . '">';
 				$output .= '<script src="'. esc_url( $url ) .'"></script>';
 				$output .= '<noscript>';
 				$output .= "<object classid='clsid:D27CDB6E-AE6D-11cf-96B8-444553540000' id='ooyalaPlayer_" . esc_attr( $sanitized_embed ) . "' width='{$width}' height='{$height}' codebase='http://fpdownload.macromedia.com/get/flashplayer/current/swflash.cab'>";
