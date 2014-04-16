@@ -54,7 +54,7 @@ if ( ! class_exists( 'OoyalaBacklotAPI' ) )
 	<div class="ov-contents">
 		<div id="ov-content-ooyala" class="ov-content">
 		 	<form name="ooyala-requests-form" action="#">
-				<p id="media-search" class="search-box">
+				<p id="media-search">
 					<img src="<?php echo $this->plugin_url; ?>img/ooyala100.png" style="vertical-align: middle; margin-right: 10px;"/>
 					<select name="ooyalasearchfield" id="ov-search-field">
 						<option value="description" selected="selected">Description</option>
@@ -82,11 +82,12 @@ if ( ! class_exists( 'OoyalaBacklotAPI' ) )
 		           <tr>
 		            <td nowrap="nowrap" style="text-align:right;">Player ID:</td>
 		            <td>
-		            <?php foreach ( $ooyala['players'] as $player ) : ?>
-						<select id="ooyala_player_id" name="ooyala_player_id">
-							<option value="<?php echo esc_attr( $player ); ?>"><?php echo esc_html( $player ); ?></option>
-						</select>
-					<?php endforeach; ?>
+
+			<select id="ooyala_player_id" name="ooyala_player_id">
+<?php			foreach ( (array) $ooyala['players'] as $player ) : ?>
+					<option value="<?php echo esc_attr( $player ); ?>"><?php echo esc_html( $player ); ?></option>
+			<?php endforeach; ?>
+			</select>
 					</td>
 		          </tr>
 		          <tr>

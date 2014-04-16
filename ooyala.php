@@ -3,7 +3,7 @@
 Plugin Name: Ooyala Video
 Plugin URI: http://www.ooyala.com/wordpressplugin/
 Description: Easy Embedding of Ooyala Videos based off an Ooyala Account as defined in the <a href="options-general.php?page=ooyala-options"> plugin settings</a>.
-Version: 1.7.1
+Version: 1.7.2
 License: GPL
 Author: Ooyala
 
@@ -170,7 +170,7 @@ class Ooyala_Video {
 			'callback' => 'recieveOoyalaEvent',
 			'wmode' => 'opaque',
 			'player_id' => $options['player_id'],
-			'platform' => 'html5-priority',
+			'platform' => 'html5-fallback',
 			'wrapper_class' => 'ooyala-video-wrapper',
 			) ), $atts
 		));
@@ -189,8 +189,8 @@ class Ooyala_Video {
 		$wrapper_class = sanitize_key( $wrapper_class );
 		// V2 Callback
 		$callback = preg_match( '/[^\w]/', $callback ) ? '' : sanitize_text_field( $callback ); // // sanitize a bit because we don't want nasty things
-		// Check if platform is one of the accepted. If not, set to html5-priority
-		$platform = in_array( $platform, array( 'flash', 'flash-only', 'html5-fallback', 'html5-priority' ) ) ? $platform : 'html5-priority';
+		// Check if platform is one of the accepted. If not, set to html5-fallback
+		$platform = in_array( $platform, array( 'flash', 'flash-only', 'html5-fallback', 'html5-priority' ) ) ? $platform : 'html5-fallback';
 		if ( empty( $code ) )
 			if ( isset( $atts[0] ) )
 				$code = $atts[0];
