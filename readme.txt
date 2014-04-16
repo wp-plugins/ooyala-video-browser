@@ -3,8 +3,8 @@ Ported By: Dave Searle
 Contributors: ooyala, dsearle, automattic, PeteMall, Range
 Tags: embedding, video, embed, portal, ooyala, shortcode
 Requires at least: 3.0
-Tested up to: 3.5
-Stable tag: 1.7
+Tested up to: 3.9
+Stable tag: 1.7.2
 
 Easy embedding of videos for the Ooyala Video Platform.
 Browse your Ooyala videos, and easily insert them into your posts and page.
