@@ -4,7 +4,7 @@ Contributors: ooyala, dsearle, automattic, PeteMall, Range
 Tags: embedding, video, embed, portal, ooyala, shortcode
 Requires at least: 3.0
 Tested up to: 3.9
-Stable tag: 1.7.2
+Stable tag: 1.7.3
 
 Easy embedding of videos for the Ooyala Video Platform.
 Browse your Ooyala videos, and easily insert them into your posts and page.
@@ -25,6 +25,9 @@ Copy the subfolder "ooyala-video" with all included files into the "wp-content/p
 2. The Ooyala GUI allows you to search and insert videos from your Ooyala account. You can search by keyword or choose the last 8 videos uploaded to the account.
 
 == Changelog ==
+
+= 1.7.3 =
+* Fix PHP 5.2.x compatibility issue
 
 = 1.7.2 =
 * Set default platform to html5-fallback
