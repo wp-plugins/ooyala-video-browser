@@ -2,7 +2,7 @@
 require_once 'OoyalaApi.php';
 
 $ooyala = get_option( 'ooyala' );
-if ( empty( $options['api_key'] ) || empty( $options['api_secret'] ) )
+if ( empty( $ooyala['api_key'] ) || empty( $ooyala['api_secret'] ) )
 	die();
 
 /**
