@@ -1,30 +1,48 @@
-=== Ooyala Video ===
-Ported By: Dave Searle
-Contributors: ooyala, dsearle, automattic, PeteMall, Range
-Tags: embedding, video, embed, portal, ooyala, shortcode
-Requires at least: 3.0
-Tested up to: 3.9
-Stable tag: 1.7.5
+=== Ooyala ===
+Contributors: Ooyala
+Tags: video, media, ooyala
+Requires at least: 3.9
+Tested up to: 4.1.1
+Stable tag: 2.0
+License: GPLv2 or later
 
-Easy embedding of videos for the Ooyala Video Platform.
-Browse your Ooyala videos, and easily insert them into your posts and page.
-
+Connect your Ooyala account to embed and upload assets directly from WordPress.
 
 == Description ==
-Easy embedding of videos for the Ooyala Video Platform.  
-Browse and search your Ooyala's videos, and easily insert them into your posts and page.  
-Upload videos to your Ooyala account directly from within WordPress.  
+
+Ooyala harnesses the power of big data to help broadcasters, operators and media companies build more engaged audiences and monetize video with personalized, interactive experiences for every screen. We go beyond traditional online video platforms, providing software and services combining best-of-breed technologies with industry-leading video analytics to help our customers optimize and automate video programming, video streaming and video syndication. Ooyala is an independent subsidiary of Telstra.
+
+The Ooyala WordPress plugin integrates seamlessly with your Wordpress 3.5+ Media Manager and lets you create posts with assets from your Ooyala account–-even uploading new videos–-without ever leaving your WordPress site.
+
+
+Using the plugin once installed
+
+1.  Go to a new or existing post.
+
+2.  Select "Embed Ooyala" above the composition area, or access Ooyala from the Media tab.
+
+3.  Search for assets by Title, Description, or Embed Code.
+
+4.  Select your desired Player Display options and insert the embed shortcode.
+
+5.  You can upload new videos straight to your account via the upload tab!
+
 
 == Installation ==
 
-Copy the subfolder "ooyala-video" with all included files into the "wp-content/plugins" folder of WordPress. Activate the plugin and setup your Backlot pcode and secret code in the Ooyala Settings screen. You will find your pcode and secret code under Account -> Developers in Backlot.
+1. Upload ooyala to /wp-content/plugins/.
 
-== Screenshots ==
+2. Activate plugin through the WordPress Plugins menu.
 
-1. A new media upload button is available to launch the Ooyala Search and Insertion GUI.
-2. The Ooyala GUI allows you to search and insert videos from your Ooyala account. You can search by keyword or choose the last 8 videos uploaded to the account.
+3. Enter your Ooyala API credentials on the Media Settings page.
+
+4. Click on "Embed Ooyala" in edit post screen to browse your asset library.
+
 
 == Changelog ==
+
+= 2.0 =
+* Initial release of Ooyala plugin redesign.
 
 = 1.7.5 =
 * Set uploaded status for an asset
@@ -68,7 +86,6 @@ Copy the subfolder "ooyala-video" with all included files into the "wp-content/p
 * Fixed a deprecated function call
 * Changed the default timeout for the remote request to 10 seconds. If you need to further extend the timeout for any reason, you can also use the 'ooyala_http_request_timeout' filter.
 
-
 = 1.4 =
 
 **New Features:**
@@ -93,9 +110,8 @@ Copy the subfolder "ooyala-video" with all included files into the "wp-content/p
 
 == Upgrade Notice ==
 
+= 2.0 =
+The plugin has been completely revamped from scratch to integrate with the WordPress Media Manager.
+
 = 1.4 =
 The plugin has been updated for WordPress 3.0 and newer.
-
-== Configuration ==
-
-The configuration options are simple and do not need explanation. See the administration panel of the plugin in your WP admin frontend.
