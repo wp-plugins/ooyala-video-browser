@@ -307,7 +307,9 @@
 	.media-selection .attachment {
 		margin-right: 7px;
 	}
-	.ooyala-toolbar li.attachment:focus, .ooyala-results li.attachment:focus:not(.selected) {
+	.ooyala-toolbar li.attachment.ooyala-attachment-item:focus,
+	.ooyala-toolbar li.attachment.ooyala-attachment-item,
+	.ooyala-results li.attachment.ooyala-attachment-item:focus:not(.selected) {
 		-webkit-box-shadow: none;
 		box-shadow: none;
 	}

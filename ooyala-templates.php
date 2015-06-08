@@ -73,11 +73,11 @@
 			</div>
 
 		<# if ( data.buttons.close ) { #>
-			<a class="close media-modal-icon" href="#" title="<?php _e('Remove'); ?>"></a>
+			<a class="close media-modal-icon" href="#" title="<?php esc_attr_e( 'Remove', 'ooyala' ); ?>"></a>
 		<# } #>
 
 		<# if ( data.buttons.check ) { #>
-			<a class="check" href="#" title="<?php _e('Deselect'); ?>"><div class="media-modal-icon"></div></a>
+			<a class="check" href="#" title="<?php esc_attr_e( 'Deselect', 'ooyala' ); ?>"><div class="media-modal-icon"></div></a>
 		<# } #>
 	</div>
 </script>
@@ -93,15 +93,15 @@
 </div>
 <dl class="ooyala-image-details-list">
 
-	<dt class="ooyala-title"><?php _e( "Title: ", 'ooyala' ); ?></dt>
+	<dt class="ooyala-title"><?php esc_html_e( "Title: ", 'ooyala' ); ?></dt>
 	<dd class="ooyala-title">{{ data.name }}</dd>
 
 	<# if (data.duration) { #>
-	<dt class="ooyala-duration"><?php _e( "Duration: ", 'ooyala' ); ?></dt>
+	<dt class="ooyala-duration"><?php esc_html_e( "Duration: ", 'ooyala' ); ?></dt>
 	<dd class="ooyala-duration">{{ data.duration_string }}</dd>
 	<# } #>
 
-	<dt class="ooyala-status"><?php _e( "Status: ", 'ooyala' ); ?></dt>
+	<dt class="ooyala-status"><?php esc_html_e( "Status: ", 'ooyala' ); ?></dt>
 	<dd class="ooyala-status ooyala-status-{{ data.status }} {{ data.status == 'processing' ? 'loading' : '' }}">{{ data.status }}
 	<# if (data.status=='uploading' && data.percent !== undefined) { #>
 		<em class="progress">(<span>{{ data.percent }}</span>%)</em>
@@ -109,7 +109,7 @@
 	</dd>
 
 	<# if ( data.description ) { #>
-	<dt class="ooyala-description"><?php _e( "Description: ", 'ooyala' ); ?></dt>
+	<dt class="ooyala-description"><?php esc_html_e( "Description: ", 'ooyala' ); ?></dt>
 	<#  if ( data.description.length > ( data.descriptionMaxLen + data.maxLenThreshold ) ) {
 			var trunc = data.description.lastIndexOf(" ", data.descriptionMaxLen);
 			if (trunc==-1) trunc = data.descriptionMaxLen;
@@ -122,7 +122,7 @@
 
 	<# if(data.labels && data.labels.length > 0) {
 	#>
-	<dt class="ooyala-labels"><?php _e( "Labels: ", 'ooyala' ); ?></dt>
+	<dt class="ooyala-labels"><?php esc_html_e( "Labels: ", 'ooyala' ); ?></dt>
 	<dd class="ooyala-labels">
 		<ul>
 		<# for(var i = 0; i < data.labels.length; i++) { #>
@@ -142,9 +142,9 @@
 <div class="ooyala-display-settings-wrapper {{ (data.model.forceEmbed || data.model.attachment.canEmbed()) ? '' : 'embed-warning' }}">
 <div class="message"><?php esc_html_e( 'This asset may not display correctly due to its current status. Do you wish to embed it anyway?', 'ooyala' ); ?><a href="#">Show Player Settings</a></div>
 <label class="setting">
-	<span><?php _e( 'Player', 'ooyala' ); ?></span>
+	<span><?php esc_html_e( 'Player', 'ooyala' ); ?></span>
 	<# if ( data.players.isFetching ) { #>
-		<em class="loading"><?php _e( 'Retrieving players', 'ooyala' ); ?></em>
+		<em class="loading"><?php esc_html_e( 'Retrieving players', 'ooyala' ); ?></em>
 	<# } else { #>
 		<select data-setting="player_id">
 			<option value=""><?php esc_html_e( 'Default', 'ooyala' ); ?></option>
@@ -156,9 +156,9 @@
 </label>
 
 <label class="setting">
-	<span><?php _e( 'Platform', 'ooyala' ); ?></span>
+	<span><?php esc_html_e( 'Platform', 'ooyala' ); ?></span>
 	<select data-setting="platform">
-		<option value=""><?php _e( 'Default', 'ooyala' ); ?></option>
+		<option value=""><?php esc_html_e( 'Default', 'ooyala' ); ?></option>
 		<# _.each(['flash','flash-only','html5-fallback','html5-priority'], function(value) { #>
 			<option value="{{ value }}">{{ value }}</option>
 		<# }); #>
@@ -166,9 +166,9 @@
 </label>
 
 <div class="setting resolution">
-	<span><?php _e( 'Size', 'ooyala' ); ?></span>
+	<span><?php esc_html_e( 'Size', 'ooyala' ); ?></span>
 	<# if (data.model.attachment.get('downloadingResolutions')) { #>
-		<em class="loading"><?php _e( 'Retrieving video resolutions', 'ooyala' ); ?></em>
+		<em class="loading"><?php esc_html_e( 'Retrieving video resolutions', 'ooyala' ); ?></em>
 	<# } else { #>
 		<select data-setting="resolution">
 		<# var resolutions = data.model.attachment.get('resolutions');
@@ -178,31 +178,31 @@
 			<option value="{{ res }}">{{ res }}</option>
 			<# }
 		} #>
-			<option value="custom"><?php _e( 'Custom', 'ooyala' ); ?></option>
+			<option value="custom"><?php esc_html_e( 'Custom', 'ooyala' ); ?></option>
 		</select>
 		<div class="custom-resolution">
 			<input type="text" data-setting="width"/>
 			X
 			<input type="text" data-setting="height"/>
-			<label><input type="checkbox" data-setting="lockAspectRatio"> <?php _e( 'Maintain aspect ratio', 'ooyala' ); ?></label>
+			<label><input type="checkbox" data-setting="lockAspectRatio"> <?php esc_html_e( 'Maintain aspect ratio', 'ooyala' ); ?></label>
 		</div>
 	<# } #>
 </div>
 
 <label class="setting">
-	<span><?php _e( 'Enable Channels', 'ooyala' ); ?></span>
+	<span><?php esc_html_e( 'Enable Channels', 'ooyala' ); ?></span>
 	<input type="checkbox" data-setting="enable_channels"/>
 </label>
 
 <label class="setting initial-time">
-	<span><?php _e( 'Initial Time', 'ooyala' ); ?></span>
-	<input type="text" data-setting="initial_time" min="0" max="{{ data.model.attachment.get('duration') / 1000 }}"> <?php _e( 'sec', 'ooyala' ); ?>
+	<span><?php esc_html_e( 'Initial Time', 'ooyala' ); ?></span>
+	<input type="text" data-setting="initial_time" min="0" max="{{ data.model.attachment.get('duration') / 1000 }}"> <?php esc_html_e( 'sec', 'ooyala' ); ?>
 </label>
 
 <label class="setting">
-	<span><?php _e( 'Locale', 'ooyala' ); ?></span>
+	<span><?php esc_html_e( 'Locale', 'ooyala' ); ?></span>
 	<select data-setting="locale">
-		<option value=''>User Default</option>
+		<option value=''><?php esc_html_e( 'User Default', 'ooyala' ); ?></option>
 	<?php
 	$locales = array(
 		'zh_CN' => 'Chinese (Simplified)', /* need to verify these */
@@ -224,9 +224,9 @@
 </label>
 
 <label class="setting additional-parameters">
-	<span><?php _e( 'Additional Player Parameters', 'ooyala' ); ?></span>
-	<em class="error-message"><?php _e( 'There is an error in your syntax:', 'ooyala' ); ?></em>
-	<textarea data-setting="additional_params_raw" placeholder="Key/value pairs in JSON or JavaScript object literal notation">{{ data.model.additional_params }}</textarea>
+	<span><?php esc_html_e( 'Additional Player Parameters', 'ooyala' ); ?></span>
+	<em class="error-message"><?php esc_html_e( 'There is an error in your syntax:', 'ooyala' ); ?></em>
+	<textarea data-setting="additional_params_raw" placeholder="<?php esc_attr_e( 'Key/value pairs in JSON or JavaScript object literal notation', 'ooyala' ); ?>">{{ data.model.additional_params }}</textarea>
 </label>
 </div>
 </script>
@@ -238,16 +238,16 @@
 		</div>
 		<div class="ooyala-more-text-container">
 			<!--// <span class="ooyala-number-remaining"></span> //-->
-			<span class="ooyala-more-text"><?php _e( "More", 'ooyala' ); ?></span>
+			<span class="ooyala-more-text"><?php esc_html_e( "More", 'ooyala' ); ?></span>
 		</div>
 	</div>
 </script>
 
 <!-- Unsupported browser message -->
 <script type="text/html" id="tmpl-ooyala-unsupported-browser">
-	<h1><?php _e( "Sorry, this browser is unsupported!", 'ooyala' ); ?></h1>
+	<h1><?php esc_html_e( "Sorry, this browser is unsupported!", 'ooyala' ); ?></h1>
 
-	<p><?php _e( "The Ooyala plugin requires at least Internet Explorer 10 to function. This plugin also supports other modern browsers with proper CORS support such as Firefox, Chrome, Safari, and Opera.", 'ooyala' ); ?></p>
+	<p><?php esc_html_e( "The Ooyala plugin requires at least Internet Explorer 10 to function. This plugin also supports other modern browsers with proper CORS support such as Firefox, Chrome, Safari, and Opera.", 'ooyala' ); ?></p>
 </script>
 
 <!-- Asset upload panel -->
@@ -257,14 +257,14 @@
 		var file = data.controller.uploader.files[0];
 		var isUploading = data.controller.uploader.state === ooyala.plupload.STARTED;
 		#>
-		<div class="file-name">File: {{ file.name }} <em class="file-size">({{ new Number( file.size ).bytesToString() }})</em>
+		<div class="file-name"><?php esc_html_e( 'File:', 'ooyala' ); ?> {{ file.name }} <em class="file-size">({{ new Number( file.size ).bytesToString() }})</em>
 		<# if( !isUploading ) { #>
-			<a class="button ooyala-upload-browser" tabindex="10">Change</a>
+			<a class="button ooyala-upload-browser" tabindex="10"><?php esc_html_e( 'Change', 'ooyala' ); ?></a>
 		<# } #>
 		</div>
-		<label class="setting">Title<input type="text" value="{{ file.model.get('name') }}" data-setting="name" tabindex="20"></label>
-		<label class="setting">Description<textarea data-setting="description" tabindex="30">{{ file.model.get('description') }}</textarea></label>
-		<label class="setting">Post-processing Status
+		<label class="setting"><?php esc_html_e( 'Title', 'ooyala' ); ?><input type="text" value="{{ file.model.get('name') }}" data-setting="name" tabindex="20"></label>
+		<label class="setting"><?php esc_html_e( 'Description', 'ooyala' ); ?><textarea data-setting="description" tabindex="30">{{ file.model.get('description') }}</textarea></label>
+		<label class="setting"><?php esc_html_e( 'Post-processing Status', 'ooyala' ); ?>
 		<select data-setting="futureStatus" tabindex="40">
 		<# var status = ['live','paused'];
 			for( var i = 0; i < status.length; i++) { #>
@@ -273,13 +273,13 @@
 		</select></label>
 		<div class="ooyala-upload-controls {{ isUploading ? 'uploading' : '' }}">
 			<div class="progress"><span>{{ ( file.model.asset && file.model.asset.get('percent') ) || 0 }}</span>%</div>
-			<a class="button ooyala-stop-upload" tabindex="60">Cancel Upload</a>
-			<a class="button ooyala-start-upload" tabindex="50">Start Upload</a>
+			<a class="button ooyala-stop-upload" tabindex="60"><?php esc_html_e( 'Cancel Upload', 'ooyala' ); ?></a>
+			<a class="button ooyala-start-upload" tabindex="50"><?php esc_html_e( 'Start Upload', 'ooyala' ); ?></a>
 		</div>
 	<# } else { #>
 		<div class="ooyala-upload-browser-container">
-			<h4>Upload an asset to your account.</h4>
-		<a class="button button-hero ooyala-upload-browser">Select File</a>
+			<h4><?php esc_html_e( 'Upload an asset to your account.', 'ooyala' ); ?></h4>
+		<a class="button button-hero ooyala-upload-browser"><?php esc_html_e( 'Select File', 'ooyala' ); ?></a>
 		</div>
 	<# } #>
 </script>
@@ -288,5 +288,5 @@
 <script type="text/html" id="tmpl-ooyala-label-search">
 	<?php esc_html_e( 'Refining by Label:', 'ooyala' ); ?>
 	<span class="ooyala-selected-label"></span>
-	<a href="#" title="Clear Label" class="ooyala-clear-label dashicons dashicons-dismiss"></a>
+	<a href="#" title="<?php esc_attr_e( 'Clear Label', 'ooyala' ); ?>" class="ooyala-clear-label dashicons dashicons-dismiss"></a>
 </script>

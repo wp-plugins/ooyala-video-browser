@@ -797,6 +797,7 @@
 
 		initialize: function() {
 			media.view.Attachment.prototype.initialize.apply(this, arguments);
+			this.$el.addClass('ooyala-attachment-item');
 
 			this.model.on('change:status', this.changeStatus, this);
 			this.changeStatus();

@@ -1,9 +1,9 @@
 === Ooyala ===
-Contributors: Ooyala
+Contributors: ooyala, thinkoomph, balbuf
 Tags: video, media, ooyala
 Requires at least: 3.9
 Tested up to: 4.1.1
-Stable tag: 2.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 
 Connect your Ooyala account to embed and upload assets directly from WordPress.
@@ -40,6 +40,9 @@ Using the plugin once installed
 
 
 == Changelog ==
+
+= 2.0.1 =
+* Backwards compatibility fixes to honor existing settings, including default player_id, video_width, and previously entered API key and secret.
 
 = 2.0 =
 * Initial release of Ooyala plugin redesign.
@@ -78,11 +81,11 @@ Using the plugin once installed
 = 1.4.3 =
 * Added Automattic as contributor
 
-= 1.4.2 = 
+= 1.4.2 =
 * Provided more robustness around the API calls being made.
 * Updated documentation to direct users to the V1 API keys.
 
-= 1.4.1 = 
+= 1.4.1 =
 * Fixed a deprecated function call
 * Changed the default timeout for the remote request to 10 seconds. If you need to further extend the timeout for any reason, you can also use the 'ooyala_http_request_timeout' filter.
 
