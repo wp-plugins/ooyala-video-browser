@@ -12,8 +12,6 @@
 
 <!-- About panel -->
 <script type="text/html" id="tmpl-ooyala-about-text">
-	<a class="ooyala-close ooyala-close-x"></a>
-
 <?php
 	/* TODO: Localize this text. */
 	include( __DIR__ . '/ooyala-about-en-us.html' );
@@ -130,27 +128,16 @@
 	<dd class="ooyala-description">{{ data.description }}</dd>
 		<# }
 	 } #>
-
-	<# if(data.labels && data.labels.length > 0) {
-	#>
-	<dt class="ooyala-labels"><?php esc_html_e( 'Labels:', 'ooyala' ); ?></dt>
-	<dd class="ooyala-labels">
-		<ul>
-		<# for(var i = 0; i < data.labels.length; i++) { #>
-			<li class="ooyala-label"><a href="#label-{{ data.labels[i].id }}" title="Click to refine your search by this label">{{ data.labels[i].name }}</a></li>
-		<# } #>
-		</ul>
-	</dd>
-	<# }
-#>
 </dl>
+
+	<div class="ooyala-labels-container"></div>
 </script>
 
 <!-- Player display options -->
 <script type="text/html" id="tmpl-ooyala-display-settings">
 <h3><?php esc_html_e( 'Player Display Settings', 'ooyala' ); ?></h3>
 
-<div class="ooyala-display-settings-wrapper {{ (data.model.forceEmbed || data.model.attachment.canEmbed()) ? '' : 'embed-warning' }}">
+<div class="ooyala-display-settings {{ (data.model.forceEmbed || data.model.attachment.canEmbed()) ? '' : 'embed-warning' }}">
 <div class="message"><?php esc_html_e( 'This asset may not display correctly due to its current status. Do you wish to embed it anyway?', 'ooyala' ); ?><a href="#">Show Player Settings</a></div>
 <label class="setting">
 	<span><?php esc_html_e( 'Player', 'ooyala' ); ?></span>
@@ -166,7 +153,7 @@
 	<# } #>
 </label>
 
-<label class="setting">
+<label class="setting ooyala-v3-setting">
 	<span><?php esc_html_e( 'Platform', 'ooyala' ); ?></span>
 	<select data-setting="platform">
 		<option value=""><?php esc_html_e( 'Default', 'ooyala' ); ?></option>
@@ -201,27 +188,36 @@
 	<# } #>
 </div>
 
-<label class="setting">
+<label class="setting ooyala-v3-setting">
 	<span><?php esc_html_e( 'Enable Channels', 'ooyala' ); ?></span>
-	<input type="checkbox" data-setting="enable_channels"/>
+	<input type="checkbox" data-setting="enableChannels"/>
 </label>
 
-<label class="setting initial-time">
+<label class="setting ooyala-initial-time ooyala-numeric-input">
 	<span><?php esc_html_e( 'Initial Time', 'ooyala' ); ?></span>
-	<input type="text" data-setting="initial_time" min="0" max="{{ data.model.attachment.get('duration') / 1000 }}"> <?php esc_html_e( 'sec', 'ooyala' ); ?>
+	<input type="text" data-setting="initialTime" min="0" max="{{ data.model.attachment.get('duration') / 1000 }}"> <?php esc_html_e( 'sec', 'ooyala' ); ?>
 </label>
 
+<label class="setting ooyala-initial-volume ooyala-numeric-input ooyala-v4-setting">
+	<span><?php esc_html_e( 'Initial Volume', 'ooyala' ); ?></span>
+	<input type="text" data-setting="initialVolume" min="0" max="1" step="0.05"> <?php esc_html_e( '0.00 - 1.00', 'ooyala' ); ?>
+</label>
 <label class="setting">
 	<span><?php esc_html_e( 'Autoplay', 'ooyala' ); ?></span>
 	<input type="checkbox" data-setting="autoplay"/>
 </label>
 
-<label class="setting">
+<label class="setting ooyala-v3-setting">
 	<span><?php esc_html_e( 'Chromeless', 'ooyala' ); ?></span>
 	<input type="checkbox" data-setting="chromeless"/>
 </label>
 
-<label class="setting">
+<label class="setting ooyala-v4-setting">
+	<span><?php esc_html_e( 'Loop', 'ooyala' ); ?></span>
+	<input type="checkbox" data-setting="loop"/>
+</label>
+
+<label class="setting ooyala-v3-setting">
 	<span><?php esc_html_e( 'Locale', 'ooyala' ); ?></span>
 	<select data-setting="locale">
 		<option value=''><?php esc_html_e( 'User Default', 'ooyala' ); ?></option>
@@ -245,11 +241,11 @@
 	</select>
 </label>
 
-<label class="setting additional-parameters">
-	<span><?php esc_html_e( 'Additional Player Parameters', 'ooyala' ); ?></span>
-	<em class="error-message"><?php esc_html_e( 'There is an error in your syntax:', 'ooyala' ); ?></em>
-	<textarea data-setting="additional_params_raw" placeholder="<?php esc_attr_e( 'Key/value pairs in JSON or JavaScript object literal notation', 'ooyala' ); ?>">{{ data.model.additional_params }}</textarea>
-</label>
+<div class="setting ooyala-setting ooyala-additional-parameters ooyala-v3-setting">
+	<label for="ooyala-additional-params"><?php esc_html_e( 'Additional Player Parameters', 'ooyala' ); ?></label>
+	<em class="ooyala-error-message"><?php esc_html_e( 'There is an error in your syntax:', 'ooyala' ); ?></em>
+	<textarea id="ooyala-additional-params" data-setting="additional_params_raw" placeholder="<?php esc_attr_e( 'Key/value pairs in JSON or JavaScript object literal notation', 'ooyala' ); ?>">{{ data.model.additional_params }}</textarea>
+</div>
 </div>
 </script>
 
@@ -272,9 +268,57 @@
 	<p><?php esc_html_e( "The Ooyala plugin requires at least Internet Explorer 10 to function. This plugin also supports other modern browsers with proper CORS support such as Firefox, Chrome, Safari, and Opera.", 'ooyala' ); ?></p>
 </script>
 
+<!-- Edit labels -->
+<script type="text/html" id="tmpl-ooyala-edit-labels">
+<#
+var $labels;
+
+(function($) {
+	var labels = data.model.get('labels') || new Backbone.Collection();
+
+	$labels = $('<div>');
+
+	labels.forEach(function(label) {
+		var $link = $('<a>').text(label.get('name'))
+		  , $label = $('<span class="ooyala-label">')
+		  , $dismiss = $('<a class="ooyala-label-remove dashicons">')
+		;
+
+		if(label.get('id')) {
+			$label.attr('data-label-id', label.get('id'));
+
+			if(data.linkable) {
+				$link.attr('href', 'label-' + label.get('id'));
+				$link.attr('title', <?php echo wp_json_encode( __( 'Refine by this label', 'ooyala' ) ); ?>);
+			}
+		}
+
+		// Surface any errors to the user via a tooltip, but allow them to dismiss
+		// the label whether or not it saved
+		if(label.get('error')) {
+			$dismiss.addClass('dashicons-warning').attr('title', label.get('error'));
+		} else {
+			$dismiss.addClass('dashicons-dismiss').attr('title', <?php echo wp_json_encode( __( 'Remove label', 'ooyala' ) ); ?>);
+		}
+
+		$label.append($link, $dismiss);
+
+		$labels.append($label);
+	});
+})(jQuery);
+#>
+
+	<div class="ooyala-label-input-container ui-front">
+		<label class="setting"><span><?php esc_html_e( 'Labels', 'ooyala' ); ?></span><input class="ooyala-label-input" type="text" /></label>
+	</div>
+
+	<div class="ooyala-label-list">
+		{{{ $labels.html() }}}
+	</div>
+</script>
+
 <!-- Asset upload panel -->
 <script type="text/html" id="tmpl-ooyala-upload-panel">
-	<a class="ooyala-close ooyala-close-x"></a>
 	<# if ( data.controller.uploader.files.length ) {
 		var file = data.controller.uploader.files[0];
 		var isUploading = data.controller.uploader.state === ooyala.plupload.STARTED;
@@ -286,6 +330,7 @@
 		</div>
 		<label class="setting"><?php esc_html_e( 'Title', 'ooyala' ); ?><input type="text" value="{{ file.model.get('name') }}" data-setting="name" tabindex="20"></label>
 		<label class="setting"><?php esc_html_e( 'Description', 'ooyala' ); ?><textarea data-setting="description" tabindex="30">{{ file.model.get('description') }}</textarea></label>
+		<div class="ooyala-labels-container"></div>
 		<label class="setting"><?php esc_html_e( 'Post-processing Status', 'ooyala' ); ?>
 		<select data-setting="futureStatus" tabindex="40">
 		<# var status = ['live','paused'];

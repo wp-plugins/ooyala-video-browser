@@ -1,12 +1,14 @@
 /* Launch Button */
-.ooyala-buttons-icon {
-	display: inline-block;
-	padding-left: 24px;
-	padding-top: 16px;
-	background: url(img/ooyala-logo-small.png) no-repeat;
-	background-size: 18px 16px;
-	margin-top: 4px;
+#insert-ooyala-button {
 }
+	.ooyala-buttons-icon {
+		display: inline-block;
+		padding-left: 24px;
+		padding-top: 18px;
+		background: url(img/ooyala-logo-small.png) no-repeat;
+		background-size: 18px 18px;
+		vertical-align: text-top;
+	}
 .disabled.button .ooyala-buttons-icon {
 	filter: Alpha(opacity=50); /* for IE8 -__- */
 	opacity: 0.5;
@@ -143,6 +145,13 @@
 		.ooyala-toolbar .media-selection {
 			right: 200px;
 		}
+
+		/* Override WP's limitation of width of these elements */
+		.media-modal-content .ooyala-search-toolbar .media-toolbar-primary,
+		.media-modal-content .ooyala-search-toolbar .media-toolbar-secondary {
+			width: auto;
+		}
+
 		.ooyala-toolbar .selection .attachment-preview {
 			padding-bottom: 0;
 		}
@@ -327,20 +336,37 @@
 	}
 
 .ooyala-toolbar .search-results-total {
-	position: absolute;
-	right: 0;
-	top: 0;
+	float: right;
 	display: none;
-	padding-right: 1em;
 }
 	.have-searched .ooyala-toolbar .search-results-total {
 		display: block;
 	}
 
+.ooyala-toolbar .search-results-refresh {
+	display: none;
+	float: right;
+	cursor: pointer;
+	margin-left: 1em;
+	font-size: 16px;
+	line-height: 24px;
+}
+
 /* Upload panel */
 .ooyala-upload-panel {
-	padding: 10px;
+	position: absolute;
+	width: 300px;
+	/* Center the panel in its space */
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
 }
+	@media only screen and (max-width: 600px) {
+		.ooyala-upload-panel {
+			position: static;
+		}
+	}
+
 	.ooyala-upload-panel label.setting, .ooyala-upload-panel label.setting input, .ooyala-upload-panel label.setting textarea {
 		display: block;
 		margin: 5px 0 10px;
@@ -352,10 +378,6 @@
 
 	.ooyala-upload-browser-container {
 		text-align: center;
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: 30%;
 		font-size: 200%;
 	}
 	.ooyala-upload-controls .ooyala-stop-upload, .ooyala-upload-controls .progress {
@@ -371,39 +393,75 @@
 			display: none;
 		}
 
+/* Label management */
+.ooyala-edit-labels .ooyala-label-remove {
+	font-size: 1em;
+	line-height: 1.2em;
+	font-size: 1.1em;
+	cursor: pointer;
+	color: inherit;
+}
+
+.ooyala-label-list {
+	line-height: 1.2em;
+	max-width: 100%;
+}
+	.ooyala-label-list .ooyala-label {
+		white-space: nowrap;
+	}
+	.ooyala-label-list .dashicons-warning:before {
+		color: red;
+	}
+
 /* Asset details panel (sidebar) */
 .ooyala-attachments-browser .ooyala-image-details {
 }
-	.ooyala-display-settings-wrapper .message {
+	.ooyala-display-settings .message {
 		display: none;
 		color: darkred;
 	}
-		.ooyala-display-settings-wrapper .message a {
+		.ooyala-display-settings .message a {
 			display: block;
 			font-style: italic;
 			margin: 1em 0;
 			box-shadow: none;
 		}
-		.ooyala-display-settings-wrapper.embed-warning .setting {
+		.ooyala-display-settings.embed-warning .setting {
 			display: none;
 		}
-		.ooyala-display-settings-wrapper.embed-warning .message {
+		.ooyala-display-settings.embed-warning .message {
 			display: block;
 		}
 	.ooyala-image-details .thumbnail img,
 	.ooyala-image-details .thumbnail {
-		max-width: 100%;
-		height: auto;
 		max-height: 300px;
+		max-width: 100%;
 		float: none;
 		clear: both;
 		display: block;
 		margin: 0 auto .5em;
 	}
+		.ooyala-image-details .ooyala-status-text {
+			display: inline-block;
+			width: 50%;
+			text-align: left;
+		}
+
+		.ooyala-image-details .thumbnail {
+			max-height: 300px;
+			position: relative;
+			padding-bottom: 30px;
+		}
+
+		.ooyala-thumbnail-action {
+			height: 30px;
+			text-align: center;
+			position: absolute;
+				left: 0; right: 0; bottom: 0;
+		}
 		.ooyala-image-details .thumbnail button {
 			margin: .25em .5em;
 		}
-
 		.ooyala-image-details-list {
 			line-height: 1.5em;
 		}
@@ -449,30 +507,55 @@
 				color: darkred;
 			}
 
-/* Settings fields */
-.ooyala-display-settings-wrapper .setting {
+/* Labels */
+.ooyala-labels-container .ooyala-label-input-container {
+	position: relative;
 }
-	.ooyala-display-settings-wrapper .setting.initial-time input {
+
+/* Settings fields */
+.ooyala-display-settings-wrapper {
+	float: left;
+	width: 100%;
+	clear: both;
+}
+	.ooyala-display-settings-wrapper .ooyala-version-setting label {
+		display: inline-block;
+		margin-right: 1em;
+		padding-top: 8px;
+	}
+	.ooyala-display-settings-wrapper .ooyala-version-setting input[type="radio"] {
+		margin-top: 0;
+	}
+		.ooyala-sidebar .ooyala-v3-settings .ooyala-v4-setting {
+			display: none;
+		}
+		.ooyala-sidebar .ooyala-v4-settings .ooyala-v3-setting {
+			display: none;
+		}
+
+	.ooyala-display-settings-wrapper .setting.ooyala-numeric-input input {
+		width: 30%;
+		float: none;
+	}
+	.ooyala-display-settings-wrapper .setting.ooyala-numeric-input input {
 		width: 30%;
 		float: none;
 	}
 
-	.ooyala-display-settings-wrapper .setting.additional-parameters textarea {
+	.ooyala-display-settings-wrapper .ooyala-setting textarea {
 		width: 98%;
 		float: none;
 	}
-		.ooyala-display-settings-wrapper .setting.additional-parameters span {
+		.ooyala-display-settings-wrapper .ooyala-setting .ooyala-error-message {
 			float: none;
-		}
-		.ooyala-display-settings-wrapper .setting.additional-parameters .error-message {
 			display: none;
 			color: darkred;
 			font-weight: normal;
 		}
-		.ooyala-display-settings-wrapper .setting.additional-parameters.error .error-message {
+		.ooyala-display-settings-wrapper .ooyala-setting.ooyala-error .ooyala-error-message {
 			display: block;
 		}
-		.ooyala-display-settings-wrapper .setting.additional-parameters.error textarea {
+		.ooyala-display-settings-wrapper .ooyala-setting.ooyala-error textarea {
 			background-color: lightpink;
 		}
 
@@ -482,9 +565,6 @@
 		line-height: 16px;
 	}
 
-		.ooyala-thumbnail-action {
-			height: 30px;
-		}
 			/* duplicate margin/padding on button for text */
 			.ooyala-status-text {
 				display: inline-block;
@@ -640,4 +720,25 @@
 	.ooyala-toolbar .media-selection .attachment {
 		margin-bottom: 20px; /* attachments might wrap, so push them down and out of view */
 	}
+}
+
+/**
+ * Tweaks to the settings screen
+ */
+.ooyala-settings input.widefat {
+	width: 400px;
+	max-width: 100%;
+}
+
+.ooyala-v4-settings .ooyala-v3-setting {
+	opacity: .5;
+}
+.ooyala-v3-settings .ooyala-v4-setting {
+	opacity: .5;
+}
+
+.ooyala-settings .textarea-invalid {
+	border-color: #dc3232 !important;
+	-webkit-box-shadow: 0 0 2px rgba( 204, 0, 0, 0.8 );
+ 	box-shadow: 0 0 2px rgba( 204, 0, 0, 0.8 );
 }
