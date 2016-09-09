@@ -28,11 +28,12 @@
 			};
 
 			// Get request with signature from WordPress
-			$.ajax(ooyala.sign, {
+			api.xhr = $.ajax(ooyala.sign, {
 				data: JSON.stringify(payload),
 				type: 'POST',
 				accepts: 'application/json',
 				contentType: 'application/json',
+				context: context
 			})
 				.fail(result.reject)
 				.done(function(response) {
@@ -42,7 +43,7 @@
 					}
 					if (context) options.context = context;
 					// And then use the computed URL to send the message
-					$.ajax(response.data.url, options)
+					api.xhr = $.ajax(response.data.url, options)
 						.done(result.resolve)
 						.fail(result.reject);
 				});
@@ -57,7 +58,10 @@
 	ooyala.model.Attachment = media.model.Attachment.extend({
 
 		initialize: function() {
-			if ( this.isNew() && this.get('embed_code')) this.set('id',this.get('embed_code'));
+			if(this.isNew() && this.get('embed_code'))
+				this.set('id', this.get('embed_code'));
+
+			this.set('labels', new Backbone.Collection());
 		},
 
 		parse: function(resp, xhr) {
@@ -65,68 +69,83 @@
 				return resp;
 
 			// round duration to nearest 1/10 second and convert to pretty string
-			if ( resp.duration != undefined ) resp.duration_string = new Number( 100 * Math.round( resp.duration/100 ) ).msToString();
+			if(resp.duration != undefined)
+				resp.duration_string = new Number(100 * Math.round(resp.duration / 100)).msToString();
+
+			// parse labels into a Backbone collection, but only if there aren't already labels attached
+			// to the asset
+			if(!this.get('labels') || this.get('labels').length === 0)
+				resp.labels = new Backbone.Collection(resp.labels);
+
 			return resp;
 		},
 
 		sync: function(method, model, options) {
 			if(method == 'read') {
-
 				// get stream resolutions if we do not have them, but only for videos or ads that were processed already
-				if ( _.contains( ['video','ad'], model.get('asset_type') ) && _.contains( ['live','paused'], model.get('status') ) && !model.get('resolutions') ) {
-
-					model.set('downloadingResolutions', true);
-
-					var defer = $.Deferred();
-
-					api.request('GET','/v2/assets/' + this.get('id') + '/streams')
-						.done(function(data) {
-							var resolutions = _.zip( _.pluck(data,'video_width'), _.pluck(data,'video_height') );
-							// remove duplicates
-							resolutions = _.uniq(resolutions, false, function(x){return x.join(',');});
-							// sort resolutions, largest first
-							resolutions.sort(function(a,b){return b[0]-a[0];});
-							model.set('resolutions',resolutions);
-
-							$.post(ooyala.imageId, {
-								image_url: model.get('preview_image_url'),
-								post_id: $('#post_ID').val(),
-								nonce: ooyala.nonce
-							})
-								.done(function(response) {
-									model.set('attachment_id', response.data && response.data.id);
-								})
-								.always(function(response) {
-									defer.resolve(response);
-								});
-						})
-						.fail(function(jqXHR) {
-							// If resolutions cannot be loaded, falls back on default dimensions automatically
-							switch (jqXHR.status) {
-								// 404 is returned when this asset does not have streams,
-								// so save an empty array so we don't try again
-								case 404:
-									model.set('resolutions',[]);
-								break;
-
-								// TODO: perhaps deal with other kinds of errors here
-							}
-
-							defer.resolve(jqXHR);
-						})
-						.always(function() {
-							model.unset('downloadingResolutions');
-						});
-
-						return defer;
+				if(!_.contains(['video','ad'], model.get('asset_type')) ||
+					 !_.contains(['live','paused'], model.get('status')) ||
+					 model.get('resolutions')) {
+					return;
 				}
-			} else if (method=='update') {
-				// we only allow name and description to be edited at this time
-				return api.request('PATCH','/v2/assets/' + this.get('id'), null, _.pick(this.toJSON(), ['name','description']))
-					.done(function(data){
+
+				model.set('downloadingResolutions', true);
+
+				api.request('GET','/v2/assets/' + this.get('id') + '/streams')
+					.done(function(data) {
+						var resolutions = _.zip( _.pluck(data,'video_width'), _.pluck(data,'video_height') );
+						// remove duplicates
+						resolutions = _.uniq(resolutions, false, function(x){return x.join(',');});
+						// sort resolutions, largest first
+						resolutions.sort(function(a,b){return b[0]-a[0];});
+						model.set('resolutions',resolutions);
+
+						$.post(ooyala.imageId, {
+							image_url: model.get('preview_image_url'),
+							post_id: $('#post_ID').val(),
+							nonce: ooyala.nonce
+						})
+							.done(function(response) {
+								model.set('attachment_id', response.data && response.data.id);
+							});
+					})
+					.fail(function(jqXHR) {
+						// If resolutions cannot be loaded, falls back on default dimensions automatically
+						switch (jqXHR.status) {
+							// 404 is returned when this asset does not have streams,
+							// so save an empty array so we don't try again
+							case 404:
+								model.set('resolutions',[]);
+							break;
+
+							// TODO: perhaps deal with other kinds of errors here
+						}
+					})
+					.always(function() {
+						model.unset('downloadingResolutions');
+					});
+			} else if(method === 'update') {
+				// apply labels
+				ooyala.model.Labels.create(model.get('labels')).done(function(labels) {
+					api.request('PUT', '/v2/assets/' + model.get('id') + '/labels/', null, labels.pluck('id'))
+						.done(function() {
+							model.set('labels', labels);
+						});
+				});
+
+				// and save name and description
+				api.request('PATCH','/v2/assets/' + model.get('id'), null, _.pick(model.toJSON(), ['name','description']))
+					.done(function(data) {
 						model.set(data);
 					});
 			}
+			else if(method === 'create') {
+				if(model.changed.labels) {
+					// Update labels
+					api.request('PUT', '/v2/assets/' + model.get('id') + '/labels/', null, model.get('labels').pluck('id'));
+				}
+			}
+
 		},
 
 		/**
@@ -218,6 +237,13 @@
 		// Sync up results with mirrored query
 		syncResults: function(model) {
 			this.results.set(model.changed);
+		},
+
+		// Clear the cache for the current search and re-execute
+		refresh: function() {
+			ooyala.model.Query.expunge(this.propsQueue.toJSON());
+
+			this.search();
 		},
 
 		// Perform a search with queued search properties
@@ -325,7 +351,7 @@
 				if (label) {
 					whereParts.push( "labels INCLUDES '" + label.replace(/'/g, "\\'") + "'" );
 				}
-				if (whereParts.length>0) {
+				if (whereParts.length > 0) {
 					params.where = whereParts.join(' AND ');
 				}
 			}
@@ -347,6 +373,12 @@
 					delete this.deferred;
 				})
 				.fail(function(response) {
+					// Don't do anything if we aborted
+					if(response.statusText === 'abort') {
+						delete this.deferred;
+						return;
+					}
+
 					if(this.deferred.retry < 3) {
 						this.more();
 					}
@@ -359,13 +391,19 @@
 				})
 				.always(function() {
 					// searching is over
-					if ( !this.deferred ) {
+					if(!this.deferred) {
 						this.results.set('searching', false);
 						this.results.set('searched', true);
 					}
 				});
 
+			this._more.xhr = api.xhr;
+
 			return (this.deferred ? this.deferred : $.Deferred().reject()).promise();
+		},
+
+		abort: function() {
+			this._more.xhr.abort();
 		},
 
 		// We have more if there's a next page
@@ -399,37 +437,71 @@
 		}
 	});
 
+	ooyala.model.Queries = [];
+
+	// Prepare arguments by filling in defaults
+	ooyala.model.Query.prepare = function(props) {
+		var Query = ooyala.model.Query, defaults = Query.defaultProps, args = {};
+
+		// Remove the `query` property. This isn't linked to a query,
+		// this *is* the query.
+		delete props.query;
+
+		// Fill default args.
+		_.defaults(props, defaults);
+
+		// Generate the query `args` object.
+		// Correct any differing property names.
+		_.each(props, function(value, prop) {
+			if(_.isNull(value))
+				return;
+
+			args[Query.propmap[prop] || prop] = value;
+		});
+
+		// Fill any other default query args.
+		_.defaults(args, Query.defaultArgs);
+
+		return args;
+	}
+
+	// Delete a query from the cache
+	ooyala.model.Query.expunge = function(props) {
+		var Query = ooyala.model.Query
+		  , args = Query.prepare(props)
+		  , queries = ooyala.model.Queries
+		  , index = -1
+		  , i
+		;
+
+		// Find the query in the query cache
+		for(i in queries) {
+			if(_.isEqual(queries[i].args, args)) {
+				index = i;
+				break;
+			}
+		}
+
+		// And slice it out!
+		if(index > -1) {
+			queries.splice(index, 1);
+		}
+	}
+
 	// Ensure our query object gets used instead, there's no other way
 	// to inject a custom query object into ooyala.model.Query.get
 	// so we must override. This function caches distinct queries
 	// so that re-queries come back instantly. Though there's no memory cleanup...
 	ooyala.model.Query.get = (function(){
-		var queries = [];
-		var Query = ooyala.model.Query;
+		var queries = ooyala.model.Queries
+		  , Query = ooyala.model.Query
+		  , searching
+		;
 
 		return function(props, options) {
-			var args     = {},
-					defaults = Query.defaultProps,
-					query;
-
-			// Remove the `query` property. This isn't linked to a query,
-			// this *is* the query.
-			delete props.query;
-
-			// Fill default args.
-			_.defaults(props, defaults);
-
-			// Generate the query `args` object.
-			// Correct any differing property names.
-			_.each(props, function(value, prop) {
-				if(_.isNull(value))
-					return;
-
-				args[Query.propmap[prop] || prop] = value;
-			});
-
-			// Fill any other default query args.
-			_.defaults(args, Query.defaultArgs);
+			var args = Query.prepare(props)
+			  , query
+			;
 
 			// Search the query cache for matches.
 			query = _.find(queries, function(query) {
@@ -443,8 +515,22 @@
 					args:  args
 				}));
 
-				// Only push successful queries into the cache.
+				// Don't stomp on currently executing searches
+				if(searching) {
+					// If we're already running that particular query,
+					// keep going.
+					if(_.isEqual(searching.args, args)) {
+						return searching;
+					}
+
+					searching.abort();
+				}
+
+				searching = query;
+
 				query.more().done(function() {
+					searching = null;
+
 					queries.push(query);
 				});
 			}
@@ -493,16 +579,22 @@
 			}
 
 			// select the asset's player id by default
-			this.set( 'player_id', this.attachment.get('player_id') );
+			this.set('player_id', this.attachment.get('player_id'));
 
+			// default the player version
+			this.set('player_version', ooyala.settings.player_version);
 		},
 
 		sync: _.noop,
 
 	}, {
-		// retrieve all players associated with the users account and cache for future use
+		// retrieve all players associated with the user's account and cache for future use
 		players: function() {
 			return this._players = this._players || new ooyala.model.Players();
+		},
+		// retrieve all labels associated with the user's account and cache for future use
+		labels: function() {
+			return this._labels = this._labels || new ooyala.model.Labels();
 		},
 	});
 
@@ -535,7 +627,82 @@
 					.fail(options.error);
 			}
 		}
+	});
 
+	/**
+	 * Collection of labels that are configured in the user's account
+	 */
+	ooyala.model.Labels = Backbone.Collection.extend({
+
+		isFetching: false,
+
+		initialize: function() {
+			this.fetch();
+			this.on('sync error', function() { this.isFetching = false; }, this);
+		},
+
+		fetch: function() {
+			this.isFetching = true;
+			this.trigger('fetching');
+			return Backbone.Collection.prototype.fetch.apply(this,arguments);
+		},
+
+		parse: function(response,options) {
+			return response.items || [];
+		},
+
+		sync: function(method, collection, options) {
+			if ( method == 'read' ) {
+				return api.request('GET', '/v2/labels')
+					.done(options.success)
+					.fail(options.error);
+			}
+		}
+	}, {
+		// Create labels in the system, return promise which
+		// resolves with the newly created labels
+		create: function(labels) {
+			var deferred = $.Deferred()
+			  , newLabels = new Backbone.Collection()
+			  , current = ooyala.model.DisplayOptions.labels()
+			  , i = 0
+			;
+
+			function step(label) {
+				i++;
+
+				if(label) {
+					newLabels.add(label);
+				}
+
+				if(i == labels.length) {
+					deferred.resolve(newLabels);
+				}
+			}
+
+			labels.each(function(label) {
+				var existing = current.find(function(l) {
+					return l.get('name').toLowerCase() === label.get('name').toLowerCase();
+				});
+
+				if(existing) {
+					step(existing);
+				}
+				else {
+					api.request('POST', '/v2/labels', {}, {
+						name: label.get('name')
+					}, this).done(function(labelData) {
+						current.add(labelData);
+						step(labelData);
+					}).fail(function(result, type, err) {
+						label.set('error', result && result.responseJSON && result.responseJSON.message || err);
+						step();
+					});
+				}
+			}, this);
+
+			return deferred.promise();
+		}
 	});
 
 	/**
@@ -552,6 +719,8 @@
 		initialize: function() {
 			// keep these attrs in sync with the asset attachment
 			this.on('change:name change:description', this.syncSettings, this);
+
+			this.asset = ooyala.model.Attachment.create({});
 		},
 
 		parse: function(response,options) {
@@ -565,7 +734,8 @@
 
 				// make a new asset
 				response.percent = 0; // define percent, which lets us know it's an active upload
-				this.asset = ooyala.model.Attachment.create(response);
+
+				this.asset.set(response);
 
 				return { id: response.embed_code };
 			}
@@ -600,10 +770,16 @@
 			// let the API know that we are done with the upload
 			return api.request('PUT','/v2/assets/' + this.id + '/upload_status', null, {status:'uploaded'}, this )
 						.done(function(data) {
+							var asset = this.asset;
+
+							asset.set('id', this.id);
+
 							// set the status response
-							this.asset.set(data);
+							asset.set(data);
+
 							// save the asset again, since user can edit title and description during upload
-							this.asset.save();
+							asset.save();
+
 							// TODO: should we make the delay smarter based off file size to determine estimated processing time?
 							window.setTimeout(this.pollStatus,ooyala.pollingDelay,this);
 						})
@@ -616,12 +792,13 @@
 		pollStatus: function(model) {
 			model.asset.forceFetch().done(function(data){
 				// schedule another poll if the status is still an 'in progress' one
-				if (['uploaded','processing'].indexOf(data.status)>-1) {
-					window.setTimeout(model.pollStatus,ooyala.pollingFrequency,model);
+				if(['uploaded','processing'].indexOf(data.status) > -1) {
+					window.setTimeout(model.pollStatus, ooyala.pollingFrequency, model);
 					//TODO: max re-polls? the assumption is _eventually_ the asset will be processed (and thus cease polling)
-				} else if (data.status=='live') {
+				} else if(data.status == 'live') {
 					// if future status is desired to be paused, set that now
-					if ( model.get('futureStatus') == 'paused' ) {
+					if(model.get('futureStatus') == 'paused') {
+
 						api.request('PATCH','/v2/assets/' + model.asset.get('id'), null, {status:'paused'}, model )
 							.done(function(data){
 								this.asset.set(data);
@@ -654,4 +831,5 @@
 
 	});
 
+	ooyala.api = api;
 })(jQuery);

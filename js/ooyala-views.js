@@ -105,6 +105,8 @@
 			this.$el.find('.search-primary').focus();
 			// load up the players associated with the account
 			ooyala.model.DisplayOptions.players();
+			// load the labels associated with the account
+			ooyala.model.DisplayOptions.labels();
 			$('.ooyala-browse-link').addClass('ooyala-browsing');
 			// update label state
 			this.labelState();
@@ -197,9 +199,12 @@
 				else {
 					this.total.$el.text(ooyala.text.results.replace('%d', separated));
 				}
+
+				this.refresh.$el.show();
 			}
 			else {
 				this.total.$el.text(ooyala.text.noResults);
+				this.refresh.$el.hide();
 			}
 		},
 
@@ -236,6 +241,11 @@
 				priority: -20
 			});
 
+			this.refresh = new ooyala.view.Refresh({
+				collection: this.collection,
+				priority: -25
+			});
+
 			this.label = new ooyala.view.LabelRefinement({
 				priority: -30
 			});
@@ -268,6 +278,8 @@
 				},
 
 				total: this.total,
+
+				refresh: this.refresh,
 
 				label: this.label,
 			});
@@ -428,14 +440,20 @@
 	ooyala.view.AttachmentDisplaySettings = media.view.Settings.extend({
 		template: media.template('ooyala-display-settings'),
 
+		className: 'ooyala-display-settings-wrapper ooyala-v3-settings',
+
 		initialize: function() {
 			// re-renders settings section after resolutions have been downloaded or status has been changed
 			this.model.attachment.on('change:downloadingResolutions', this.render, this);
 			this.model.attachment.on('change:status', this.changeStatus, this);
+			// hide or show V3 vs. V4-specific fields
+			this.model.on('change:player_version', this.render, this);
 			// constrain proportions, maybe
 			this.model.on('change:width change:height', this.constrainRatio, this);
 			// validate additional params when they change
 			this.model.on('change:additional_params_raw', this.validateParams, this);
+			// validate custom CSS, but only loosely
+			this.model.on('change:custom_css', this.validateCSS, this);
 			// user has confirmed that they wish to embed a potentially non-embeddable asset
 			this.model.on('change:forceEmbed', this.render, this);
 			this.options.players = ooyala.model.DisplayOptions.players();
@@ -458,9 +476,29 @@
 			// change field to a number type dynamically
 			// (the update handler in media.view.Settings does not support HTML5 inputs)
 			try {
-				this.$('input[data-setting=initial_time]')[0].type = 'number';
+				this.$('.ooyala-numeric-input input').each(function() {
+					this.type = 'number';
+				});
 			} catch(e) {}
+
+			this.$el.attr('class', this.$el.attr('class').replace(/ooyala-v\d-settings/, 'ooyala-' + this.model.get('player_version') + '-settings'));
+
 			return this;
+		},
+
+		// add radio button support to updater
+		update: function(key) {
+			var value = this.model.get( key )
+			  , $setting = this.$('[data-setting="' + key + '"]')
+			  , $buttons
+			  , $value
+			;
+
+			media.view.Settings.prototype.update.apply(this, arguments);
+
+			if($setting.is('input[type="radio"]')) {
+				$setting.filter('[value="' + value + '"]').prop('checked', 'checked');
+			}
 		},
 
 		// update stuff if the attachment status changes
@@ -473,10 +511,11 @@
 		// show the width/height inputs only when selecting custom size,
 		// otherwise update these values behind the scenes
 		updateSize: function() {
-			var val = this.$('.setting.resolution select').val() || 'auto',
-				$custom = this.$('.custom-resolution'),
-				resolutions = this.model.attachment.get('resolutions') || [],
-				resolution;
+			var val = this.$('.setting.resolution select').val() || 'auto'
+			  , $custom = this.$('.custom-resolution')
+			  , resolutions = this.model.attachment.get('resolutions') || []
+			  , resolution
+			;
 
 			// add class only if custom is selected
 			$custom.toggleClass('custom-entry', (val == 'custom'));
@@ -499,7 +538,7 @@
 
 		// constrain the other dimension if entering custom dimensions and this option is selected
 		constrainRatio: function(model) {
-			var field = Object.keys( model.changedAttributes() ).shift();
+			var field = Object.keys(model.changedAttributes()).shift();
 			// bail if...
 			if (
 				!_.contains( ['width','height'], field ) //not a dimension change
@@ -508,9 +547,12 @@
 			) return;
 
 			// set the *other* field based on how much this field changed
-			var other = ( field == 'width' ) ? 'height' : 'width',
-				attributes = {};
+			var other = (field == 'width') ? 'height' : 'width'
+			  , attributes = {}
+			;
+
 			attributes[other] = Math.round( this.model.get(other) * ( this.model.get(field) / this.model.previous(field) ) );
+
 			// silent so that we don't enter an endless loop
 			this.model.set( attributes, { silent: true } );
 		},
@@ -519,17 +561,22 @@
 		validateParams: function() {
 			// try parsing the input as an object literal, then convert to JSON
 			// this is attempting to normalize the input as JSON
-			var params = this.model.get('additional_params_raw');
-			if ( params ) {
+			var params = (this.model.get('additional_params_raw') || '').trim();
+
+			if(params) {
 				try {
 					// encapsulating braces are optional
-					if ( !/^\s*\{.+\}\s*$/.test(params) ) params = '{' + params + '}';
+					if(!/^\s*\{.+\}\s*$/.test(params)) {
+						params = '{' + params + '}';
+					}
+
 					// eval(), with justification:
 					// Yes, this could execute some arbitrary code, but this only happening in the context of
 					// wp-admin, as a means to see if this is a 'plain' JS object or string of JSON.
 					// This will prevent the user from inadvertantly passing arbitrary code to the shortcode,
 					// which in turn would put it right into a script tag ending up on the front end.
-					params = eval( '(' + params + ')' );
+					params = eval('(' + params + ')');
+
 					// empty objects, arrays, or primitives need not apply
 					if ( typeof params == 'object' && !Array.isArray(params) && Object.keys(params).length ) {
 						params = JSON.stringify( params );
@@ -541,8 +588,16 @@
 					params = false;
 				}
 			}
+
 			this.model.set('additional_params',params||'');
-			this.$('.setting.additional-parameters').toggleClass('error',params===false);
+			this.$('.ooyala-additional-parameters').toggleClass('ooyala-error',params===false);
+		},
+
+		// loosely validate CSS just as a sanity check
+		validateCSS: function() {
+			var css = this.model.get('custom_css') || '';
+
+			this.$('.ooyala-custom-css').toggleClass('ooyala-error', css && !css.match(new RegExp(ooyala.cssPattern)));
 		},
 
 		// dismiss warning about the asset potentially not being embeddable
@@ -653,6 +708,117 @@
 	});
 
 	/**
+	 * Edit labels UI
+	 */
+	ooyala.view.EditLabels = media.View.extend({
+		template: media.template('ooyala-edit-labels'),
+		className: 'ooyala-edit-labels',
+
+		events: {
+			'keyup .ooyala-label-input': 'maybeAddLabels',
+			'blur .ooyala-label-input': 'maybeAddLabels',
+			'click .ooyala-label-remove': 'removeLabel'
+		},
+
+		ready: function() {
+			this.model.on('change:labels', this.render, this);
+		},
+
+		render: function() {
+			media.View.prototype.render.apply(this, arguments);
+
+			var _this = this, $input = _this.$('input');
+
+			$input.autocomplete({
+				minLength: 0,
+				delay: 0,
+				source: function(req, res) {
+					res(ooyala.model.DisplayOptions.labels().filter(function(label) {
+						return label.get('name').toLowerCase().indexOf(req.term) > -1;
+					}).map(function(label) { return label.get('name'); }));
+				},
+				select: function(ev, ui) {
+					$input.val(ui.item.value);
+
+					_this.addLabels();
+
+					$input.val();
+				}
+			});
+
+			$input.on('focus', function() {
+				$input.trigger('keydown');
+			});
+
+			if(this.refocus) {
+				$input.focus();
+				delete this.refocus;
+			}
+		},
+
+		maybeAddLabels: function(ev) {
+			// When they type a comma or return, add tags immediately
+			if(ev.keyCode !== 13 && ev.keyCode !== 188) {
+				return;
+			}
+
+			ev.preventDefault();
+			ev.stopPropagation();
+
+			this.addLabels();
+		},
+
+		addLabels: function() {
+			var model = this.model
+			  , input = this.$('input').val()
+			  , current = model.get('labels')
+			  , originalLength = current.length
+			  , labels
+			;
+
+			// Grab all non-empty labels separated by , that don't already exist
+			labels = input
+				.split(/\s*,+\s*/)
+				.map(function(val) { return val.trim(); });
+
+			for(var i in labels) {
+				if(labels[i] && !current.find(function(label) {
+					return label.get('name').toLowerCase() === labels[i].toLowerCase();
+				})) {
+					current.push({ name: labels[i] }, { silent: true });
+				}
+			}
+
+			// And update the model if there's a change
+			if(current.length != originalLength) {
+				this.refocus = true;
+				model.trigger('change:labels')
+
+				// If this is an existing asset, immediately add the labels
+				if(model.get('id')) {
+					ooyala.model.Labels.create(current).done(function(labels) {
+						model.save({ labels: labels });
+					});
+				}
+			}
+		},
+
+		removeLabel: function(ev) {
+			var name = $(ev.target).parents('.ooyala-label').text()
+			  , label = this.model.get('labels').findWhere({ name: name })
+			;
+
+			this.model.get('labels').remove(label);
+			this.model.save();
+			this.render();
+
+			ev.preventDefault();
+			ev.stopPropagation();
+		}
+
+	});
+
+	/**
 	 * The Upload panel
 	 */
 	ooyala.view.Upload = media.View.extend({
@@ -669,7 +835,7 @@
 		initialize: function() {
 
 			// make an uploader, but only once
-			if ( !this.controller.uploader ) {
+			if(!this.controller.uploader) {
 				// browse button needs to exist in the dom before creating uploader
 				this.controller.$browser = $('<a href="#" class="button" />').hide().appendTo('body');
 
@@ -694,12 +860,13 @@
 						},
 					},
 				});
+
 				// initialize the uploader
 				this.controller.uploader.init();
 			}
 			// save view inside of uploader so it can be accessed from the uploader callbacks
 			this.controller.uploader.view = this;
-			this.controller.uploader.bind('FilesAdded',this.selectFile,this);
+			this.controller.uploader.bind('FilesAdded', this.selectFile, this);
 		},
 
 		render: function() {
@@ -753,6 +920,11 @@
 			file.chunkURL = function(file,chunk) {
 				return file.model.get('uploading_urls')[chunk];
 			};
+
+			// add label editing view
+			this.views.set('.ooyala-labels-container', new ooyala.view.EditLabels({
+				model: file.model.asset
+			}));
 
 			uploader.view.render();
 		},
@@ -896,6 +1068,11 @@
 
 			// Load up additional details
 			this.model.fetch();
+
+			this.views.set('.ooyala-labels-container', new ooyala.view.EditLabels({
+				linkable: true,
+				model: this.model
+			}));
 		},
 
 		// update the percentage progress
@@ -908,6 +1085,10 @@
 			e.preventDefault();
 			$(e.target).html( this.$('span.more').toggleClass('show').hasClass('show') ? '(show&nbsp;less)' : '(show&nbsp;more)' );
 		},
+
+		// disable auto-focus of first input, which is now the labels field
+		initialFocus: function() {
+		}
 
 	});
 
@@ -973,6 +1154,26 @@
 		// the selection.
 		toggleSelection: function() {
 			this.options.selection.single(this.model);
+		}
+	});
+
+	/**
+	 * Refresh
+	 */
+	ooyala.view.Refresh = media.View.extend({
+		tagName: 'a',
+		className: 'search-results-refresh dashicons dashicons-image-rotate',
+
+		events: {
+			'click': 'refresh'
+		},
+
+		attributes: {
+			title: ooyala.text.refresh
+		},
+
+		refresh: function() {
+			this.collection.refresh();
 		}
 	});
 

@@ -181,22 +181,40 @@ Number.prototype.bytesToString = Number.prototype.bytesToString || function () {
 			}
 
 			// Get display options from user
-			var display = this.display(asset);
+			var display = this.display(asset)
+			  , css = display.get('custom_css')
+			  , additional = (display.get('additional_params') || '').trim()
+			;
+
+			if(additional) {
+				try {
+					additional = JSON.parse(additional);
+				} catch(e) {
+					additional = null;
+				}
+			}
 
 			// basic req'd attributes for shortcode
 			var atts = {
 				//uses 'code' and 'player_id' to be backwards compatible with the previous ooyala plugin
 				code: asset.get('id'),
 				player_id: display.get('player_id') || asset.get('player_id'),
+				auto: !!display.get('auto'),
 				width: display.get('width'),
 				height: display.get('height'),
-				auto: !!asset.get('auto')
+				initialVolume: display.get('initialVolume'),
+				initialTime: display.get('initialTime'),
+				autoplay: !!display.get('autoplay'),
+				loop: !!display.get('loop'),
 			};
 
 			// get the display options but only if different than the defaults
-			_.each( _.pick( display.attributes, Object.keys(ooyala.playerDefaults) ),
-				function(val,key){ if (val != ooyala.playerDefaults[key] ) atts[key] = val; } //return only values that are different from the defaults
-			);
+			_.each(_.pick(display.attributes, Object.keys(ooyala.playerDefaults)), function(val, key) {
+				//return only values that are different from the defaults
+				if(atts[key] == ooyala.playerDefaults[key]) {
+					delete atts[key];
+				}
+			});
 
 			// default shortcode options to pass to wp shortcode string function
 			var shortcode_options = {
@@ -206,12 +224,30 @@ Number.prototype.bytesToString = Number.prototype.bytesToString || function () {
 			};
 
 			// handle add'l params JSON string, if present
-			if ( shortcode_options.attrs.additional_params ) {
+			if(additional || css) {
+				if(!additional) {
+					additional = {};
+				}
+
+				if(css) {
+					additional.css = css;
+				}
+
 				// additional params are the body or 'content' area of the shortcode, NOT an attribute
-				shortcode_options.content = shortcode_options.attrs.additional_params;
-				delete shortcode_options.attrs.additional_params;
+				shortcode_options.content = JSON.stringify(additional);
+
+				delete atts.additional_params;
 				delete shortcode_options.type; //remove 'single' type so that it will allow content and a closing tag
 			}
+
+			// switch out mapped attributes to their shortcode-friendly equivalents
+			for(var param in ooyala.paramMapping) {
+				if(atts[param]) {
+					atts[ooyala.paramMapping[param]] = atts[param];
+					delete atts[param];
+				}
+			}
+
 			// build the shortcode
 			shortcode = wp.shortcode.string(shortcode_options);
 
